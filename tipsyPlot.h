@@ -92,15 +92,21 @@ typedef struct {
     attributes* attr;
 } tipsy;
 
-
+typedef struct {
+    float min;
+    float max;
+    int ngas;
+    int ndark;
+    int nstar;
+    gas_particle g;
+    dark_particle d;
+    star_particle s;
+} bin_particle;
 typedef struct {
     int nbins;
     float binwidth;
-    tipsy* tipsyIn;         // pointer to the original tipsy the profile was created from
-    gas_particle* gas;
-    dark_particle* dark;
-    star_particle* star;
-    attributes* attr;
+    tipsy* sim;         // pointer to the original tipsy the profile was created from
+    bin_particle* bin;  // pointer to bins which actually hold the data
 } profile;
 
 /*
