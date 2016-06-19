@@ -21,6 +21,7 @@
 #define ERR_FILE_OPEN 2
 #define ERR_NO_PARTICLES 3
 #define ERR_MISSING_ARGS 4
+#define ERR_UNKNOWN_PARTICLE 5
 
 #define WARN_REALLOC_SHRINK 1
 #define WARN_REALLOC_DATA_LOSS 2
@@ -98,15 +99,15 @@ typedef struct {
     int ngas;
     int ndark;
     int nstar;
-    gas_particle g;
-    dark_particle d;
-    star_particle s;
-} bin_particle;
+} bin_attributes;
 typedef struct {
+    tipsy* sim;         // pointer to the original tipsy the profile was created from
     int nbins;
     float binwidth;
-    tipsy* sim;         // pointer to the original tipsy the profile was created from
-    bin_particle* bin;  // pointer to bins which actually hold the data
+    bin_attributes* bin;
+    gas_particle* gas;
+    dark_particle* dark;
+    star_particle* star;
 } profile;
 
 /*
@@ -142,6 +143,11 @@ int writeTipsyStd(const char filename[], tipsy* tipsyOut);
 // tipsyUtils.c
 void autoFindBounds(tipsy* tipsyIn);
 void tipsySetDefaults(tipsy* tipsyIn);
+
+// particleFlops.c
+void particleSetZero(void* particle, int type);
+void particleAdd(void* dest, void* src1, void* src2, int type);
+void particleFlop(void* dest, void* src1, void* src2);
 
 // tipsyMisc.c
 void errorCase(const int errorCode);

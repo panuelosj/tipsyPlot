@@ -34,22 +34,32 @@ profile* profileCreate(tipsy* tipsyIn, const int nbins, const float min, const f
 
     // Create object (pointer to a struct)
     profile* profileOut = (profile*)malloc(sizeof(profile));
+    profileOut->sim = tipsyIn;
     profileOut->nbins = nbins;
     profileOut->binwidth = (max - min)/((float)nbins);
-    profileOut->sim = tipsyIn;
 
     // Allocate space
-    if (tipsyIn->head->nbodies != 0){
-        profileOut->bin = (bin_particle*)malloc(nbins*sizeof(bin_particle));
-    } else profileOut->bin = NULL;
+    profileOut->bin = (bin_attributes*)malloc(nbins*sizeof(bin_attributes));
+    if (tipsyIn->head->nsph != 0){
+        profileOut->gas = (gas_particle*)malloc(nbins*sizeof(gas_particle));
+    } else profileOut->gas = NULL;
+    if (tipsyIn->head->ndark != 0){
+        profileOut->dark = (dark_particle*)malloc(nbins*sizeof(dark_particle));
+    } else profileOut->dark = NULL;
+    if (tipsyIn->head->nstar != 0){
+        profileOut->star = (star_particle*)malloc(nbins*sizeof(star_particle));
+    } else profileOut->star = NULL;
 
     // initialize bin values
-    for(i=0; i<nbins; i++){
+    for (i=0; i<nbins; i++){
         profileOut->bin[i].min = min + i*profileOut->binwidth;
         profileOut->bin[i].max = min + (i+1)*profileOut->binwidth;
         profileOut->bin[i].ngas = 0;
         profileOut->bin[i].ndark = 0;
         profileOut->bin[i].nstar = 0;
+        particleSetZero(&profileOut->gas[i], TYPE_GAS);
+        particleSetZero(&profileOut->dark[i], TYPE_DARK);
+        particleSetZero(&profileOut->star[i], TYPE_STAR);
     }
 
     // calculate bin values
@@ -57,15 +67,18 @@ profile* profileCreate(tipsy* tipsyIn, const int nbins, const float min, const f
 
     for (i=0; i < tipsyIn->head->nsph; i++){
         j = (int)floor(((*calc_x)(tipsyIn, TYPE_GAS, i) - min)/((float)nbins));
-
+        particleAdd(&profileOut->gas[j], &profileOut->gas[j], &tipsyIn->gas[i], TYPE_GAS);
+        profileOut->bin[j].ngas++;
     }
     for (i=0; i < tipsyIn->head->ndark; i++){
         j = (int)floor(((*calc_x)(tipsyIn, TYPE_DARK, i) - min)/((float)nbins));
-
+        particleAdd(&profileOut->dark[j], &profileOut->dark[j], &tipsyIn->dark[i], TYPE_DARK);
+        profileOut->bin[j].ndark++;
     }
     for (i=0; i < tipsyIn->head->nstar; i++){
         j = (int)floor(((*calc_x)(tipsyIn, TYPE_STAR, i) - min)/((float)nbins));
-
+        particleAdd(&profileOut->star[j], &profileOut->star[j], &tipsyIn->star[i], TYPE_STAR);
+        profileOut->bin[j].nstar++;
     }
 
 

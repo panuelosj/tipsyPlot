@@ -31,6 +31,9 @@ void errorCase(const int errorCode){
 		case ERR_MISSING_ARGS:
 			printf("Error: not enough arguments\n");
 			exit(-1);
+		case ERR_UNKNOWN_PARTICLE:
+			printf("Error: unknown particle type\n");
+			exit(-1);
 	}
 }
 void warnCase(const int warningCode){
@@ -54,16 +57,16 @@ void warnCase(const int warningCode){
 ##        ##     ## #### ##    ##    ##     ######
 */
 void printGas(gas_particle* p){
-    printf("\tmass:\t%f\n", p->mass);
-    printf("\tpos:\t%f, %f, %f\n", p->pos[0], p->pos[1], p->pos[2]);
-    printf("\tvel:\t%f, %f, %f\n", p->vel[0], p->vel[1], p->vel[2]);
-    printf("\trho:\t%f\n\ttemp:\t%f\n\teps:\t%f\n\tmetals:\t%f\n\tphi:\t%f\n", p->rho,p->temp,p->eps,p->metals,p->phi);
+	printf("\tmass:\t%f\n", p->mass);
+	printf("\tpos:\t%f, %f, %f\n", p->pos[0], p->pos[1], p->pos[2]);
+	printf("\tvel:\t%f, %f, %f\n", p->vel[0], p->vel[1], p->vel[2]);
+	printf("\trho:\t%f\n\ttemp:\t%f\n\teps:\t%f\n\tmetals:\t%f\n\tphi:\t%f\n", p->rho,p->temp,p->eps,p->metals,p->phi);
 }
 void printHeader(header* h){
-    printf("Header:\n");
-    printf("\tsimtime:\t%f\n\tnbodies:\t%i\n\tndim:\t%i\n\tnsph:\t%i\n\tndark:\t%i\n\tnstar:\t%i\n\tpad:\t%i\n",
-            h->simtime, h->nbodies, h->ndim, h->nsph, h->ndark, h->nstar, h->pad);
-    //printf("Float: %i, Int: %i, Double: %i\n", sizeof(float), sizeof(int), sizeof(double));
+	printf("Header:\n");
+	printf("\tsimtime:\t%f\n\tnbodies:\t%i\n\tndim:\t%i\n\tnsph:\t%i\n\tndark:\t%i\n\tnstar:\t%i\n\tpad:\t%i\n",
+			h->simtime, h->nbodies, h->ndim, h->nsph, h->ndark, h->nstar, h->pad);
+			//printf("Float: %i, Int: %i, Double: %i\n", sizeof(float), sizeof(int), sizeof(double));
 }
 void printAttr(attributes* a){
 	printf("Attributes:\n");
