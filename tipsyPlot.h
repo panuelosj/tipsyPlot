@@ -113,13 +113,17 @@ typedef struct {
 // function pointers
 typedef float (*flop)(float val1, float val2);
 typedef float (*calc_bin)(tipsy* tipsyIn, int type, int particle);
-typedef float (*calc_var)(void* particle);
+typedef float (*calc_var)(void* particle, int type);
 
 
 typedef struct {
-    char title[100];
-    char label[100];
+    const char *title;
+    const char *label;
     calc_var equation;
+    int nbins;
+    float* derived_array;
+    float max;
+    float min;
 } plottingvar;
 
 /*
@@ -131,6 +135,10 @@ typedef struct {
 ##       ##     ## ##   ### ##    ##    ##     ##  ##     ## ##   ### ##    ##
 ##        #######  ##    ##  ######     ##    ####  #######  ##    ##  ######
 */
+
+float calc_rho(void* particle, int type);
+float xpos(tipsy* tipsyIn, int type, int particle);
+
 // tipsySimEdit.c
 void tipsyCenter(tipsy* tipsyIn);
 void tipsyScaleShrink(tipsy* tipsyIn, const int xShrink, const int yShrink, const int zShrink);
@@ -147,6 +155,7 @@ tipsy* tipsyJoin(tipsy* tipsy1, tipsy* tipsy2);
 
 // tipsyProfile.c
 profile* profileCreate(tipsy* tipsyIn, const int nbins, const float min, const float max, calc_bin xs);
+void deriveProfile(profile* profileIn, plottingvar* variable);
 
 // tipsyFileIO.c
 tipsy* readTipsyStd(const char filename[]);
@@ -184,3 +193,8 @@ int swapEndianInt(const int valIn);
 double swapEndianDouble(const double valIn);
 float swapEndianFloat(const float valIn);
 void swapEndianBatch(const tipsy* tipsyIn, const int type, const int i);
+
+
+// misc.c
+float findMaxVal(float* arrayIn, int len);
+float findMinVal(float* arrayIn, int len);

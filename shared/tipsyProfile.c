@@ -5,6 +5,15 @@
 #include <math.h>
 #include "../tipsyPlot.h"
 
+void deriveProfile(profile* profileIn, plottingvar* variable){
+    int i;
+    variable->nbins = profileIn->nbins;
+    for (i=0; i<variable->nbins; i++){
+        
+        variable->derived_array[i] = variable->equation(profileIn->gas[i],)
+    }
+}
+
 profile* profileCreate(tipsy* tipsyIn, const int nbins, const float min, const float max, calc_bin xs){
     /* Creates a new profile based on an input tipsy. Allocating all relevant
         memory based on the number of bins stated, as well as calculates the
