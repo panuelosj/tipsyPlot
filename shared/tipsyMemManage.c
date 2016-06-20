@@ -23,6 +23,9 @@ tipsy* tipsyCreate(const double simtime, const int nsph, const int ndark, const 
             const int nsph          - number of gas particles to be allocated
             const int ndark         - number of dark particles to be allocated
             const int nstar         - number os star particles to be allocated
+
+        ToDo:
+            - replace NULL pointer for empty particles to dummy struct
     */
 
     // Create object (pointer to a struct of pointers to memory)

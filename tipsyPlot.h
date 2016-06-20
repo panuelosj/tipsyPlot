@@ -110,6 +110,10 @@ typedef struct {
     star_particle* star;
 } profile;
 
+
+typedef float (*flop)(float val1, float val2);
+typedef float (*calc_x)(tipsy* tipsyIn, int type, int particle);
+
 /*
 ######## ##     ## ##    ##  ######  ######## ####  #######  ##    ##  ######
 ##       ##     ## ###   ## ##    ##    ##     ##  ##     ## ###   ## ##    ##
@@ -145,9 +149,20 @@ void autoFindBounds(tipsy* tipsyIn);
 void tipsySetDefaults(tipsy* tipsyIn);
 
 // particleFlops.c
-void particleSetZero(void* particle, int type);
-void particleAdd(void* dest, void* src1, void* src2, int type);
-void particleFlop(void* dest, void* src1, void* src2);
+//void particleSetZero(void* particle, int type);
+//void particleAdd(void* dest, void* src1, void* src2, int type);
+void pFlop(void* dest, void* src1, void* src2, int type, flop op);
+void pFlopGas(gas_particle* dest, gas_particle* src1, gas_particle* src2, flop op);
+void pFlopDark(dark_particle* dest, dark_particle* src1, dark_particle* src2, flop op);
+void pFlopStar(star_particle* dest, star_particle* src1, star_particle* src2, flop op);
+
+void vFlopGas(gas_particle* dest, gas_particle* src1, float src2, flop op);
+void vFlopDark(dark_particle* dest, dark_particle* src1, float src2, flop op);
+void vFlopStar(star_particle* dest, star_particle* src1, float src2, flop op);
+
+float flopSetZero(float val1, float val2);
+float flopAdd(float val1, float val2);
+float flopDivide(float val1, float val2);
 
 // tipsyMisc.c
 void errorCase(const int errorCode);
