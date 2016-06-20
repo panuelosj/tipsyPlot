@@ -110,9 +110,17 @@ typedef struct {
     star_particle* star;
 } profile;
 
-
+// function pointers
 typedef float (*flop)(float val1, float val2);
-typedef float (*calc_x)(tipsy* tipsyIn, int type, int particle);
+typedef float (*calc_bin)(tipsy* tipsyIn, int type, int particle);
+typedef float (*calc_var)(void* particle);
+
+
+typedef struct {
+    char title[100];
+    char label[100];
+    calc_var equation;
+} plottingvar;
 
 /*
 ######## ##     ## ##    ##  ######  ######## ####  #######  ##    ##  ######
@@ -138,7 +146,7 @@ void tipsyExtend(tipsy* tipsyIn, const int nNewSPH, const int nNewDark, const in
 tipsy* tipsyJoin(tipsy* tipsy1, tipsy* tipsy2);
 
 // tipsyProfile.c
-profile* profileCreate(tipsy* tipsyIn, int nbins, float min, float max);
+profile* profileCreate(tipsy* tipsyIn, const int nbins, const float min, const float max, calc_bin xs);
 
 // tipsyFileIO.c
 tipsy* readTipsyStd(const char filename[]);

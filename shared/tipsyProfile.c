@@ -5,7 +5,7 @@
 #include <math.h>
 #include "../tipsyPlot.h"
 
-profile* profileCreate(tipsy* tipsyIn, const int nbins, const float min, const float max, calc_x xs){
+profile* profileCreate(tipsy* tipsyIn, const int nbins, const float min, const float max, calc_bin xs){
     /* Creates a new profile based on an input tipsy. Allocating all relevant
         memory based on the number of bins stated, as well as calculates the
         binned averages for all default variables. Structure for the profile is
@@ -15,6 +15,9 @@ profile* profileCreate(tipsy* tipsyIn, const int nbins, const float min, const f
 
         Currently allows creation of an empty profile. Should I throw an error
         for this?
+            - in empty particle case, the bins are still allocated and filled
+                with zero, but calculations are not performed to avoid division
+                by zero error
 
         Parameters:
             const tipsy* tipsyIn    - tipsy snapshot to make a profile of
@@ -38,7 +41,7 @@ profile* profileCreate(tipsy* tipsyIn, const int nbins, const float min, const f
     profileOut->nbins = nbins;
     profileOut->binwidth = (max - min)/((float)nbins);
 
-    // Allocate and initialize bins
+    // Allocate and initialize bins and particles
     profileOut->bin = (bin_attributes*)malloc(nbins*sizeof(bin_attributes));
     profileOut->gas = (gas_particle*)malloc(nbins*sizeof(gas_particle));
     profileOut->dark = (dark_particle*)malloc(nbins*sizeof(dark_particle));
@@ -59,32 +62,29 @@ profile* profileCreate(tipsy* tipsyIn, const int nbins, const float min, const f
         // belongs to and adding it to the running total, then divide by the
         // total number of particles found for that bin
     if (tipsyIn->head->nsph != 0){
-        profileOut->gas = (gas_particle*)malloc(nbins*sizeof(gas_particle));
         for (i=0; i < tipsyIn->head->nsph; i++){
             j = (int)floor((xs(tipsyIn, TYPE_GAS, i) - min)/((float)nbins));
             pFlopGas(&profileOut->gas[j], &profileOut->gas[j], &tipsyIn->gas[i], flopAdd);
             profileOut->bin[j].ngas ++;
         }
         vFlopGas(&profileOut->gas[j], &profileOut->gas[j], (float)profileOut->bin[j].ngas, flopDivide);
-    } else profileOut->gas = NULL;
+    }
     if (tipsyIn->head->ndark != 0){
-        profileOut->dark = (dark_particle*)malloc(nbins*sizeof(dark_particle));
         for (i=0; i < tipsyIn->head->ndark; i++){
             j = (int)floor((xs(tipsyIn, TYPE_DARK, i) - min)/((float)nbins));
             pFlopDark(&profileOut->dark[j], &profileOut->dark[j], &tipsyIn->dark[i], flopAdd);
             profileOut->bin[j].ndark ++;
         }
         vFlopDark(&profileOut->dark[j], &profileOut->dark[j], (float)profileOut->bin[j].ndark, flopDivide);
-    } else profileOut->dark = NULL;
+    }
     if (tipsyIn->head->nstar != 0){
-        profileOut->star = (star_particle*)malloc(nbins*sizeof(star_particle));
         for (i=0; i < tipsyIn->head->nstar; i++){
             j = (int)floor((xs(tipsyIn, TYPE_STAR, i) - min)/((float)nbins));
             pFlopStar(&profileOut->star[j], &profileOut->star[j], &tipsyIn->star[i], flopAdd);
             profileOut->bin[j].nstar ++;
         }
         vFlopStar(&profileOut->star[j], &profileOut->star[j], (float)profileOut->bin[j].nstar, flopDivide);
-    } else profileOut->star = NULL;
+    }
 
     return profileOut;
 }
