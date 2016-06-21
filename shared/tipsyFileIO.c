@@ -64,7 +64,7 @@ tipsy* readTipsyStd(const char filename[]){
     } else newTipsy->gas = NULL;
     // Create and read in dark matter particles
     if (newTipsy->head->ndark != 0){                                          // Check if particles exist
-        newTipsy->dark = (dark_particle*)malloc(newTipsy->head->nsph*sizeof(dark_particle));  // Allocate space
+        newTipsy->dark = (dark_particle*)malloc(newTipsy->head->ndark*sizeof(dark_particle));  // Allocate space
         for (i=0; i < newTipsy->head->ndark; i++){
             fread(&newTipsy->dark[i].mass, sizeof(float), 9, fp);               // Read in binary
             swapEndianBatch(newTipsy, TYPE_DARK, i);                            // Swap endianness
@@ -72,7 +72,7 @@ tipsy* readTipsyStd(const char filename[]){
     } else newTipsy->dark = NULL;
     // Create and read in star particles
     if (newTipsy->head->nstar != 0){                                          // Check if particles exist
-        newTipsy->star = (star_particle*)malloc(newTipsy->head->nsph*sizeof(star_particle));  // Allocate space
+        newTipsy->star = (star_particle*)malloc(newTipsy->head->nstar*sizeof(star_particle));  // Allocate space
         for (i=0; i < newTipsy->head->nstar; i++){
             fread(&newTipsy->star[i].mass, sizeof(float), 11, fp);              // Read in binary
             swapEndianBatch(newTipsy, TYPE_STAR, i);                            // Swap endianness

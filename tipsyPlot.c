@@ -21,7 +21,7 @@ int main() {
     ##        ##     ## ##     ## ##     ## ##     ##  ######
     */
     // FileIO params
-    const char genericfilename[] = "shocktube";
+    const char genericfilename[] = "sampledata/scsShock";
     const char genericTitle[] = "Shocktube\n";
     const int nsteps = 50, interval = 5;
     const int nout = (int)nsteps/interval;
@@ -50,13 +50,11 @@ int main() {
     /*
     DERIVED ARRAYS
     */
-    int numvars = 2;
+    int numvars = 3;
     derivedvar* plotvars = (derivedvar*)malloc(numvars*sizeof(derivedvar));
     initializeDerivedVar(&plotvars[0], "rho", "Density",  calc_rho);
     initializeDerivedVar(&plotvars[1], "v_x", "Flow Velocity", calc_velx);
     initializeDerivedVar(&plotvars[2], "T", "Temperature", calc_temp);
-
-
 
 
 
@@ -75,8 +73,9 @@ int main() {
 
     // Find min-max bounds
     // first timestep, sets the min max bounds
-    filetime = (0+1)*interval;                                              // calculate current filename time
+    filetime = (0+1)*interval;                                                  // calculate current filename time
     sprintf(simname, "%s.%05d", genericfilename, filetime);                     // generate filename
+    printf("reading: %s\n", simname);
     tipsy* snap = readTipsyStd(simname);
     profile* pfile = profileCreate(snap, nbins, minx, maxx, xpos);
     for (j=0; j<numvars; j++){
@@ -85,10 +84,12 @@ int main() {
         plotvars[j].min = findMinVal(plotvars[j].derived_array, plotvars[j].nbins);
     }
     tipsyDestroy(snap);
+    printf("here\n");
     // the rest, updates the min max bounds by checking if they are lower and higher
     for (i=1; i<nout; i++){
         filetime = (i+1)*interval;                                          // calculate current filename time
         sprintf(simname, "%s.%05d", genericfilename, filetime);                 // generate filename
+        printf("reading: %s\n", simname);
         tipsy* snap = readTipsyStd(simname);
         profile* pfile = profileCreate(snap, nbins, minx, maxx, xpos);
         for (j=0; j<numvars; j++){

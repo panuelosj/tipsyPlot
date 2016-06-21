@@ -4,6 +4,16 @@
 *.obj
 *.elf
 
+# Data
+sampledata/*
+*.denu
+*.HeI
+*.HeII
+*.MassHot
+*.Tinc
+*.u
+*.uHot
+
 # Precompiled Headers
 *.gch
 *.pch
