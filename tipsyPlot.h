@@ -99,21 +99,21 @@ typedef struct {
     int ngas;
     int ndark;
     int nstar;
-} bin_attributes;
+    gas_particle gas;
+    dark_particle dark;
+    star_particle star;
+} bin_particle;
 typedef struct {
     tipsy* sim;         // pointer to the original tipsy the profile was created from
     int nbins;
     float binwidth;
-    bin_attributes* bin;
-    gas_particle* gas;
-    dark_particle* dark;
-    star_particle* star;
+    bin_particle* bin;
 } profile;
 
 // function pointers
 typedef float (*flop)(float val1, float val2);
-typedef float (*calc_bin)(tipsy* tipsyIn, int type, int particle);
-typedef float (*calc_var)(void* particle, int type);
+typedef float (*calc_bin)(tipsy* tipsyIn, int type, int p);
+typedef float (*calc_var)(bin_particle* binp);
 
 
 typedef struct {
@@ -124,7 +124,7 @@ typedef struct {
     float* derived_array;
     float max;
     float min;
-} plottingvar;
+} derivedvar;
 
 /*
 ######## ##     ## ##    ##  ######  ######## ####  #######  ##    ##  ######
@@ -136,8 +136,8 @@ typedef struct {
 ##        #######  ##    ##  ######     ##    ####  #######  ##    ##  ######
 */
 
-float calc_rho(void* particle, int type);
-float xpos(tipsy* tipsyIn, int type, int particle);
+float calc_rho(bin_particle* binp);
+float xpos(tipsy* tipsyIn, int type, int p);
 
 // tipsySimEdit.c
 void tipsyCenter(tipsy* tipsyIn);
@@ -155,7 +155,8 @@ tipsy* tipsyJoin(tipsy* tipsy1, tipsy* tipsy2);
 
 // tipsyProfile.c
 profile* profileCreate(tipsy* tipsyIn, const int nbins, const float min, const float max, calc_bin xs);
-void deriveProfile(profile* profileIn, plottingvar* variable);
+void initializeDerivedVar(derivedvar* variable, const char label[], const char title[], calc_var equation);
+void calculateDerivedVar(profile* profileIn, derivedvar* variable);
 
 // tipsyFileIO.c
 tipsy* readTipsyStd(const char filename[]);

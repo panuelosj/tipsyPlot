@@ -50,8 +50,7 @@ int main() {
     */
     int numvars = 2;
     plottingvar* plotvars = (plottingvar*)malloc(numvars*sizeof(plottingvar));
-    plotvars[0].label = "rho"; plotvars[0].title = "Density";
-    plotvars[0].equation = calc_rho;
+    initializeDerivedVar(&plotvars[0], "rho", "Density",  calc_rho);
 
 
 
@@ -94,25 +93,18 @@ int main() {
 
 
 // calc_var
-float calc_rho(void* particle, int type){
-    switch (type){
-        case TYPE_GAS:
-            return ((gas_particle*)particle)->rho;
-        case TYPE_DARK:
-            return nanf("no attribute rho");
-        case TYPE_STAR:
-            return nanf("no attribute rho");
-    }
+float calc_rho(bin_particle* bin){
+    return bin->gas.rho;
 }
 
 // calc_bin
-float xpos(tipsy* tipsyIn, int type, int particle){
+float xpos(tipsy* tipsyIn, int type, int p){
     switch (type){
         case TYPE_GAS:
-            return tipsyIn->gas[particle].pos[AXIS_X];
+            return tipsyIn->gas[p].pos[AXIS_X];
         case TYPE_DARK:
-            return tipsyIn->dark[particle].pos[AXIS_X];
+            return tipsyIn->dark[p].pos[AXIS_X];
         case TYPE_STAR:
-            return tipsyIn->star[particle].pos[AXIS_X];
+            return tipsyIn->star[p].pos[AXIS_X];
     }
 }

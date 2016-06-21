@@ -5,13 +5,28 @@
 #include <math.h>
 #include "../tipsyPlot.h"
 
-void deriveProfile(profile* profileIn, plottingvar* variable){
+void initializeDerivedVar(derivedvar* variable, const char label[], const char title[], calc_var equation){
+    variable->label = label;
+    variable->title = title;
+    variable->equation = equation;
+}
+
+void calculateDerivedVar(derivedvar* variable, profile* profileIn){
+    /* Calculates an array of an arbitrary variable, using the equation
+        provided in the plottingvar struct, and fills in the values in the
+        array pointed to by variable->derived_array. The number of bins is read
+        from the input profile and inherited by the derivedvar
+
+        Parameters:
+            derivedvar* variable    - pointer to the new variable to be filled in
+            profile* profileIn      - profile of nonderived variables whose
+                                        values will be used to calculate the
+                                        new derived variable
+    */
     int i;
-    variable->nbins = profileIn->nbins;
-    for (i=0; i<variable->nbins; i++){
-        
-        variable->derived_array[i] = variable->equation(profileIn->gas[i],)
-    }
+    variable->nbins = profileIn->nbins;                                         // inherit nbins
+    for (i=0; i<variable->nbins; i++)                                           // calculate value of new variable for all bins in profile
+        variable->derived_array[i] = variable->equation(&(profileIn->bin[i]));
 }
 
 profile* profileCreate(tipsy* tipsyIn, const int nbins, const float min, const float max, calc_bin xs){
@@ -51,19 +66,16 @@ profile* profileCreate(tipsy* tipsyIn, const int nbins, const float min, const f
     profileOut->binwidth = (max - min)/((float)nbins);
 
     // Allocate and initialize bins and particles
-    profileOut->bin = (bin_attributes*)malloc(nbins*sizeof(bin_attributes));
-    profileOut->gas = (gas_particle*)malloc(nbins*sizeof(gas_particle));
-    profileOut->dark = (dark_particle*)malloc(nbins*sizeof(dark_particle));
-    profileOut->star = (star_particle*)malloc(nbins*sizeof(star_particle));
+    profileOut->bin = (bin_particle*)malloc(nbins*sizeof(bin_particle));
     for (i=0; i<nbins; i++){
         profileOut->bin[i].min = min + i*profileOut->binwidth;
         profileOut->bin[i].max = min + (i+1)*profileOut->binwidth;
         profileOut->bin[i].ngas = 0;
         profileOut->bin[i].ndark = 0;
         profileOut->bin[i].nstar = 0;
-        pFlopGas(&profileOut->gas[i], NULL, NULL, flopSetZero);
-        pFlopDark(&profileOut->dark[i], NULL, NULL, flopSetZero);
-        pFlopStar(&profileOut->star[i], NULL, NULL, flopSetZero);
+        pFlopGas(&(profileOut->bin[i].gas), NULL, NULL, flopSetZero);
+        pFlopDark(&(profileOut->bin[i].dark), NULL, NULL, flopSetZero);
+        pFlopStar(&(profileOut->bin[i].star), NULL, NULL, flopSetZero);
     }
 
     // Allocate space for binned particle data and calculate the binned average
@@ -73,26 +85,26 @@ profile* profileCreate(tipsy* tipsyIn, const int nbins, const float min, const f
     if (tipsyIn->head->nsph != 0){
         for (i=0; i < tipsyIn->head->nsph; i++){
             j = (int)floor((xs(tipsyIn, TYPE_GAS, i) - min)/((float)nbins));
-            pFlopGas(&profileOut->gas[j], &profileOut->gas[j], &tipsyIn->gas[i], flopAdd);
+            pFlopGas(&(profileOut->bin[j].gas), &(profileOut->bin[j].gas), &(tipsyIn->gas[i]), flopAdd);
             profileOut->bin[j].ngas ++;
         }
-        vFlopGas(&profileOut->gas[j], &profileOut->gas[j], (float)profileOut->bin[j].ngas, flopDivide);
+        vFlopGas(&(profileOut->bin[j].gas), &(profileOut->bin[j].gas), (float)profileOut->bin[j].ngas, flopDivide);
     }
     if (tipsyIn->head->ndark != 0){
         for (i=0; i < tipsyIn->head->ndark; i++){
             j = (int)floor((xs(tipsyIn, TYPE_DARK, i) - min)/((float)nbins));
-            pFlopDark(&profileOut->dark[j], &profileOut->dark[j], &tipsyIn->dark[i], flopAdd);
+            pFlopDark(&(profileOut->bin[j].dark), &(profileOut->bin[j].dark), &(tipsyIn->dark[i]), flopAdd);
             profileOut->bin[j].ndark ++;
         }
-        vFlopDark(&profileOut->dark[j], &profileOut->dark[j], (float)profileOut->bin[j].ndark, flopDivide);
+        vFlopDark(&(profileOut->bin[j].dark), &(profileOut->bin[j].dark), (float)profileOut->bin[j].ndark, flopDivide);
     }
     if (tipsyIn->head->nstar != 0){
         for (i=0; i < tipsyIn->head->nstar; i++){
             j = (int)floor((xs(tipsyIn, TYPE_STAR, i) - min)/((float)nbins));
-            pFlopStar(&profileOut->star[j], &profileOut->star[j], &tipsyIn->star[i], flopAdd);
+            pFlopStar(&(profileOut->bin[j].star), &(profileOut->bin[j].star), &(tipsyIn->star[i]), flopAdd);
             profileOut->bin[j].nstar ++;
         }
-        vFlopStar(&profileOut->star[j], &profileOut->star[j], (float)profileOut->bin[j].nstar, flopDivide);
+        vFlopStar(&(profileOut->bin[j].star), &(profileOut->bin[j].star), (float)profileOut->bin[j].nstar, flopDivide);
     }
 
     return profileOut;
