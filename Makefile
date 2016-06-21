@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -c
 LDFLAGS =
-LIBS = -lm -lX11 -lplplotd
+LIBS = -lm -lX11 -lplplot
 
 # files
 SRD_SRC = $(wildcard shared/*.c)

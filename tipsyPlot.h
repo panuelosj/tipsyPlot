@@ -137,6 +137,8 @@ typedef struct {
 */
 
 float calc_rho(bin_particle* binp);
+float calc_velx(bin_particle* binp);
+float calc_temp(bin_particle* binp);
 float xpos(tipsy* tipsyIn, int type, int p);
 
 // tipsySimEdit.c
@@ -156,7 +158,7 @@ tipsy* tipsyJoin(tipsy* tipsy1, tipsy* tipsy2);
 // tipsyProfile.c
 profile* profileCreate(tipsy* tipsyIn, const int nbins, const float min, const float max, calc_bin xs);
 void initializeDerivedVar(derivedvar* variable, const char label[], const char title[], calc_var equation);
-void calculateDerivedVar(profile* profileIn, derivedvar* variable);
+void calculateDerivedVar(derivedvar* variable, profile* profileIn);
 
 // tipsyFileIO.c
 tipsy* readTipsyStd(const char filename[]);
