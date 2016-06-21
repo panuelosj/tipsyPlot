@@ -84,6 +84,7 @@ int main() {
         plotvars[j].max = findMaxVal(plotvars[j].derived_array, plotvars[j].nbins);
         plotvars[j].min = findMinVal(plotvars[j].derived_array, plotvars[j].nbins);
     }
+    tipsyDestroy(snap);
     // the rest, updates the min max bounds by checking if they are lower and higher
     for (i=1; i<nout; i++){
         filetime = (i+1)*interval;                                          // calculate current filename time
@@ -97,6 +98,7 @@ int main() {
             else if (findMinVal(plotvars[j].derived_array, plotvars[j].nbins) < plotvars[j].min)
                 plotvars[j].min = findMinVal(plotvars[j].derived_array, plotvars[j].nbins);
         }
+        tipsyDestroy(snap);
         if (i%10 == 0) printf("done t=%d\n", i);
     }
     // extend boundaries

@@ -109,3 +109,8 @@ profile* profileCreate(tipsy* tipsyIn, const int nbins, const float min, const f
 
     return profileOut;
 }
+
+void profileDestroy(profile* profileIn){
+    free(profileIn->bin);
+    free(profileIn);
+}
