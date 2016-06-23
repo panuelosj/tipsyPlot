@@ -23,10 +23,10 @@ int main() {
     // FileIO params
     const char genericfilename[] = "sampledata/scsShock";
     const char genericTitle[] = "Shocktube\n";
-    const int nsteps = 50, interval = 5;
+    const int nsteps = 100, interval = 5;
     const int nout = (int)nsteps/interval;
 
-    const float minx = -7.0, maxx = 7.0;
+    const float xmin = -7.0, xmax = 7.0;
     const int nbins = 200;
 
     // Physical Properties
@@ -42,9 +42,11 @@ int main() {
       ## ##   ##     ## ##    ##  ##    ##
        ###    ##     ## ##     ##  ######
     */
-    // indexes
     char simname[100];
+    char filenameout[100];
+    char title[100];
     int i, j, k;
+    float minlocalt, maxlocalt;
     int filetime;
 
     /*
@@ -52,9 +54,9 @@ int main() {
     */
     int numvars = 3;
     derivedvar* plotvars = (derivedvar*)malloc(numvars*sizeof(derivedvar));
-    initializeDerivedVar(&plotvars[0], "rho", "Density",  calc_rho);
-    initializeDerivedVar(&plotvars[1], "v_x", "Flow Velocity", calc_velx);
-    initializeDerivedVar(&plotvars[2], "T", "Temperature", calc_temp);
+    initializeDerivedVar(&plotvars[0], "rho", "Density", "rho",  calc_rho, TYPE_GAS);
+    initializeDerivedVar(&plotvars[1], "v_x", "Flow Velocity", "velx", calc_velx, TYPE_GAS);
+    initializeDerivedVar(&plotvars[2], "T", "Temperature", "temp", calc_temp, TYPE_GAS);
 
 
 
@@ -77,36 +79,44 @@ int main() {
     sprintf(simname, "%s.%05d", genericfilename, filetime);                     // generate filename
     printf("reading: %s\n", simname);
     tipsy* snap = readTipsyStd(simname);
-    profile* pfile = profileCreate(snap, nbins, minx, maxx, xpos);
+    profile* pfile = profileCreate(snap, nbins, xmin, xmax, xpos);
     for (j=0; j<numvars; j++){
-        calculateDerivedVar(&plotvars[j], pfile);
-        plotvars[j].max = findMaxVal(plotvars[j].derived_array, plotvars[j].nbins);
-        plotvars[j].min = findMinVal(plotvars[j].derived_array, plotvars[j].nbins);
+        printf("\tcalculating: %s\n", plotvars[j].title);
+        calculateDerivedVar(&plotvars[j], pfile, TYPE_GAS);
+        plotvars[j].ymin = findMinVal(plotvars[j].profile_ys, plotvars[j].nbins);
+        plotvars[j].ymax = findMaxVal(plotvars[j].profile_ys, plotvars[j].nbins);
     }
     tipsyDestroy(snap);
-    printf("here\n");
     // the rest, updates the min max bounds by checking if they are lower and higher
     for (i=1; i<nout; i++){
-        filetime = (i+1)*interval;                                          // calculate current filename time
+        filetime = (i+1)*interval;                                              // calculate current filename time
         sprintf(simname, "%s.%05d", genericfilename, filetime);                 // generate filename
         printf("reading: %s\n", simname);
-        tipsy* snap = readTipsyStd(simname);
-        profile* pfile = profileCreate(snap, nbins, minx, maxx, xpos);
+        snap = readTipsyStd(simname);
+        pfile = profileCreate(snap, nbins, xmin, xmax, xpos);
         for (j=0; j<numvars; j++){
-            calculateDerivedVar(&plotvars[j], pfile);
-            if (findMaxVal(plotvars[j].derived_array, plotvars[j].nbins) > plotvars[j].max)
-                plotvars[j].max = findMaxVal(plotvars[j].derived_array, plotvars[j].nbins);
-            else if (findMinVal(plotvars[j].derived_array, plotvars[j].nbins) < plotvars[j].min)
-                plotvars[j].min = findMinVal(plotvars[j].derived_array, plotvars[j].nbins);
+            printf("\tcalculating: %s\n", plotvars[j].title);
+            calculateDerivedVar(&plotvars[j], pfile, TYPE_GAS);
+            minlocalt = findMinVal(plotvars[j].profile_ys, plotvars[j].nbins);
+            maxlocalt = findMaxVal(plotvars[j].profile_ys, plotvars[j].nbins);
+            if (minlocalt < plotvars[j].ymin)
+                plotvars[j].ymin = minlocalt;
+            if (maxlocalt > plotvars[j].ymax)
+                plotvars[j].ymax = maxlocalt;
         }
         tipsyDestroy(snap);
         if (i%10 == 0) printf("done t=%d\n", i);
     }
+    printf("\n\n\n");
+
+
     // extend boundaries
     for (j=0; j<numvars; j++){
-        plotvars[j].max += 0.2*(plotvars[j].max - plotvars[j].min);
-        plotvars[j].min -= 0.2*(plotvars[j].max - plotvars[j].min);
+        printf("adjusting boundaries: %s\n", plotvars[j].title);
+        plotvars[j].ymax += 0.2*(plotvars[j].ymax - plotvars[j].ymin);
+        plotvars[j].ymin -= 0.2*(plotvars[j].ymax - plotvars[j].ymin);
     }
+    printf("\n\n\n");
 
     /*
     ########  ##        #######  ########
@@ -119,15 +129,34 @@ int main() {
     */
     printf("found bounds, creating plots now\n");
     // Initialize PLplot
-    plsdev("png");
-    plinit();
 
     for (i=0; i<nout; i++){
         filetime = (i+1)*interval;                                          // calculate current filename time
         sprintf(simname, "%s.%05d", genericfilename, filetime);                 // generate filename
-        tipsy* snap = readTipsyStd(simname);
-        profile* pfile = profileCreate(snap, nbins, minx, maxx, xpos);
+        printf("reading: %s\n", simname);
+        snap = readTipsyStd(simname);
+        pfile = profileCreate(snap, nbins, xmin, xmax, xpos);
 
+        // Individual plots
+        for (j=0; j<numvars; j++){
+            printf("\tplotting: %s\n", plotvars[j].title);
+            calculateDerivedVar(&plotvars[j], pfile, TYPE_GAS);
+            sprintf(filenameout, "./test/%s/%s.scsShock%05d.png", plotvars[j].shortname, plotvars[j].shortname, filetime);
+            // setup plotting grid
+                // plenv(xmin, xmax, ymin, ymax, just, axis);
+                // just (axis scaling) - 0 = scaled independently
+                // axis - 0 = draw box, ticks, and numeric tick labels
+            plsdev("pngcairo");
+            plsetopt("geometry", "1080x810");
+            plsetopt("-o", filenameout);
+            plinit();
+            plenv(xmin, xmax, plotvars[j].ymin, plotvars[j].ymax, 0, 0);
+            plline(plotvars[j].nbins, plotvars[j].profile_xs, plotvars[j].profile_ys);
+            plstring(plotvars[j].npoints, plotvars[j].points_xs, plotvars[j].points_ys, "#0x002e");
+            sprintf(title, "%s t=%05d", plotvars[j].title, filetime);
+            pllab("x", plotvars[j].label, title);
+            plend();
+        }
 
 
     }
@@ -139,14 +168,36 @@ int main() {
 
 
 // calc_var
-float calc_rho(bin_particle* bin){
-    return bin->gas.rho;
+float calc_rho(void* particle, int type){
+    switch (type) {
+        case TYPE_GAS:
+            return ((gas_particle*)particle)->rho;
+            break;
+        default:
+            errorCase(ERR_INVALID_ATTRIBUTE);
+    }
 }
-float calc_velx(bin_particle* bin){
-    return bin->gas.vel[AXIS_X];
+float calc_velx(void* particle, int type){
+    switch (type) {
+        case TYPE_GAS:
+            return ((gas_particle*)particle)->vel[AXIS_X];
+            break;
+        case TYPE_DARK:
+            return ((dark_particle*)particle)->vel[AXIS_X];
+            break;
+        case TYPE_STAR:
+            return ((star_particle*)particle)->vel[AXIS_X];
+            break;
+    }
 }
-float calc_temp(bin_particle* bin){
-    return bin->gas.temp;
+float calc_temp(void* particle, int type){
+    switch (type) {
+        case TYPE_GAS:
+            return ((gas_particle*)particle)->temp;
+            break;
+        default:
+            errorCase(ERR_INVALID_ATTRIBUTE);
+    }
 }
 
 // calc_bin
@@ -154,10 +205,14 @@ float xpos(tipsy* tipsyIn, int type, int p){
     switch (type){
         case TYPE_GAS:
             return tipsyIn->gas[p].pos[AXIS_X];
+            break;
         case TYPE_DARK:
             return tipsyIn->dark[p].pos[AXIS_X];
+            break;
         case TYPE_STAR:
             return tipsyIn->star[p].pos[AXIS_X];
+            break;
+        default:
+            errorCase(ERR_UNKNOWN_PARTICLE);
     }
-    return 0;
 }

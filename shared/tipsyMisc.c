@@ -34,6 +34,12 @@ void errorCase(const int errorCode){
 		case ERR_UNKNOWN_PARTICLE:
 			printf("Error: unknown particle type\n");
 			exit(-1);
+		case ERR_UNKNOWN_POINTER_SIZE:
+			printf("Error: pointer initialized but to an unknown memory size. Will lead to memleak\n");
+			exit(-1);
+		case ERR_INVALID_ATTRIBUTE:
+			printf("Error: particle does not have the given attribute");
+			exit(-1);
 	}
 }
 void warnCase(const int warningCode){

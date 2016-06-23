@@ -11,6 +11,7 @@
 #define TYPE_GAS 2
 #define TYPE_DARK 3
 #define TYPE_STAR 4
+#define TYPE_BIN 5
 #define VAL_NaN 3.402823466e+38
 
 #define AXIS_X 0
@@ -22,6 +23,8 @@
 #define ERR_NO_PARTICLES 3
 #define ERR_MISSING_ARGS 4
 #define ERR_UNKNOWN_PARTICLE 5
+#define ERR_UNKNOWN_POINTER_SIZE 6
+#define ERR_INVALID_ATTRIBUTE 7
 
 #define WARN_REALLOC_SHRINK 1
 #define WARN_REALLOC_DATA_LOSS 2
@@ -93,9 +96,17 @@ typedef struct {
     attributes* attr;
 } tipsy;
 
+
+// function pointers
+typedef float (*flop)(float val1, float val2);
+typedef float (*calc_bin)(tipsy* tipsyIn, int type, int p);
+//typedef float (*calc_var)(bin_particle* binp);
+typedef float (*calc_var)(void* particle, int type);
+
 typedef struct {
-    float min;
-    float max;
+    float xmin;
+    float xmax;
+    float xval;
     int ngas;
     int ndark;
     int nstar;
@@ -105,25 +116,26 @@ typedef struct {
 } bin_particle;
 typedef struct {
     tipsy* sim;         // pointer to the original tipsy the profile was created from
+    calc_bin eqbin;
     int nbins;
     float binwidth;
     bin_particle* bin;
 } profile;
 
-// function pointers
-typedef float (*flop)(float val1, float val2);
-typedef float (*calc_bin)(tipsy* tipsyIn, int type, int p);
-typedef float (*calc_var)(bin_particle* binp);
-
-
 typedef struct {
-    const char *title;
-    const char *label;
+    const char* title;
+    const char* label;
+    const char* shortname;
     calc_var equation;
+    int type;
+    float ymin;
+    float ymax;
     int nbins;
-    float* derived_array;
-    float max;
-    float min;
+    int npoints;
+    double* profile_xs;
+    double* profile_ys;
+    double* points_xs;
+    double* points_ys;
 } derivedvar;
 
 /*
@@ -136,9 +148,9 @@ typedef struct {
 ##        #######  ##    ##  ######     ##    ####  #######  ##    ##  ######
 */
 
-float calc_rho(bin_particle* binp);
-float calc_velx(bin_particle* binp);
-float calc_temp(bin_particle* binp);
+float calc_rho(void* particle, int type);
+float calc_velx(void* particle, int type);
+float calc_temp(void* particle, int type);
 float xpos(tipsy* tipsyIn, int type, int p);
 
 // tipsySimEdit.c
@@ -157,8 +169,10 @@ tipsy* tipsyJoin(tipsy* tipsy1, tipsy* tipsy2);
 
 // tipsyProfile.c
 profile* profileCreate(tipsy* tipsyIn, const int nbins, const float min, const float max, calc_bin xs);
-void initializeDerivedVar(derivedvar* variable, const char label[], const char title[], calc_var equation);
-void calculateDerivedVar(derivedvar* variable, profile* profileIn);
+void initializeDerivedVar(derivedvar* variable, const char label[], const char title[], const char shortname[], calc_var equation, int type);
+void calculateDerivedVar(derivedvar* variable, profile* profileIn, int type);
+void calculateDerivedVarPoints(derivedvar* variable, profile* profileIn, int type);
+
 
 // tipsyFileIO.c
 tipsy* readTipsyStd(const char filename[]);
@@ -199,5 +213,5 @@ void swapEndianBatch(const tipsy* tipsyIn, const int type, const int i);
 
 
 // misc.c
-float findMaxVal(float* arrayIn, int len);
-float findMinVal(float* arrayIn, int len);
+double findMaxVal(double* arrayIn, int len);
+double findMinVal(double* arrayIn, int len);
