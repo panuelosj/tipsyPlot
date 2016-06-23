@@ -125,26 +125,29 @@ void calculateDerivedVarPoints(derivedvar* variable, profile* profileIn, int typ
     switch (type){
         case TYPE_GAS:
             variable->points_xs = (double*)realloc(variable->points_xs, profileIn->sim->head->nsph*sizeof(double));
+            variable->points_ys = (double*)realloc(variable->points_ys, profileIn->sim->head->nsph*sizeof(double));
             variable->npoints = profileIn->sim->head->nsph;
-            for (i=0; i<profileIn->sim->head->nsph; i++)
+            for (i=0; i<profileIn->sim->head->nsph; i+=10)
                 variable->points_xs[i] = (double)(profileIn->eqbin(profileIn->sim, type, i));
-            for (i=0; i<profileIn->sim->head->nsph; i++)
+            for (i=0; i<profileIn->sim->head->nsph; i+=10)
                 variable->points_ys[i] = (double)(variable->equation(&(profileIn->sim->gas[i]), type));
             break;
         case TYPE_DARK:
             variable->points_xs = (double*)realloc(variable->points_xs, profileIn->sim->head->ndark*sizeof(double));
+            variable->points_ys = (double*)realloc(variable->points_ys, profileIn->sim->head->ndark*sizeof(double));
             variable->npoints = profileIn->sim->head->ndark;
-            for (i=0; i<profileIn->sim->head->ndark; i++)
+            for (i=0; i<profileIn->sim->head->ndark; i+=10)
                 variable->points_xs[i] = (double)(profileIn->eqbin(profileIn->sim, type, i));
-            for (i=0; i<profileIn->sim->head->ndark; i++)
+            for (i=0; i<profileIn->sim->head->ndark; i+=10)
                 variable->points_ys[i] = (double)(variable->equation(&(profileIn->sim->dark[i]), type));
             break;
         case TYPE_STAR:
             variable->points_xs = (double*)realloc(variable->points_xs, profileIn->sim->head->nstar*sizeof(double));
+            variable->points_ys = (double*)realloc(variable->points_ys, profileIn->sim->head->nstar*sizeof(double));
             variable->npoints = profileIn->sim->head->nstar;
-            for (i=0; i<profileIn->sim->head->nstar; i++)
+            for (i=0; i<profileIn->sim->head->nstar; i+=10)
                 variable->points_xs[i] = (double)(profileIn->eqbin(profileIn->sim, type, i));
-            for (i=0; i<profileIn->sim->head->nstar; i++)
+            for (i=0; i<profileIn->sim->head->nstar; i+=10)
                 variable->points_ys[i] = (double)(variable->equation(&(profileIn->sim->star[i]), type));
             break;
         default:

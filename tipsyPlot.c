@@ -128,7 +128,6 @@ int main() {
     ##        ########  #######     ##
     */
     printf("found bounds, creating plots now\n");
-    // Initialize PLplot
 
     for (i=0; i<nout; i++){
         filetime = (i+1)*interval;                                          // calculate current filename time
@@ -140,21 +139,31 @@ int main() {
         // Individual plots
         for (j=0; j<numvars; j++){
             printf("\tplotting: %s\n", plotvars[j].title);
-            calculateDerivedVar(&plotvars[j], pfile, TYPE_GAS);
-            sprintf(filenameout, "./test/%s/%s.scsShock%05d.png", plotvars[j].shortname, plotvars[j].shortname, filetime);
+            calculateDerivedVarPoints(&plotvars[j], pfile, TYPE_GAS);
+            sprintf(filenameout, "./test/%s/%s.scsShock.%05d.png", plotvars[j].shortname, plotvars[j].shortname, filetime);
+            
+            sprintf(title, "%s t=%05d", plotvars[j].title, filetime);
             // setup plotting grid
                 // plenv(xmin, xmax, ymin, ymax, just, axis);
                 // just (axis scaling) - 0 = scaled independently
                 // axis - 0 = draw box, ticks, and numeric tick labels
+
+            //plsetopt("-o", filenameout);
             plsdev("pngcairo");
+            plfontld(1);
             plsetopt("geometry", "1080x810");
-            plsetopt("-o", filenameout);
+            plscolbg(255, 255, 255);
+            plscol0(1, 0, 0, 0);
+            plsfnam(filenameout);
             plinit();
             plenv(xmin, xmax, plotvars[j].ymin, plotvars[j].ymax, 0, 0);
-            plline(plotvars[j].nbins, plotvars[j].profile_xs, plotvars[j].profile_ys);
-            plstring(plotvars[j].npoints, plotvars[j].points_xs, plotvars[j].points_ys, "#0x002e");
-            sprintf(title, "%s t=%05d", plotvars[j].title, filetime);
             pllab("x", plotvars[j].label, title);
+            plline(plotvars[j].nbins, plotvars[j].profile_xs, plotvars[j].profile_ys);
+            //printf("npoints %d\n", plotvars[j].npoints);
+            //printf("npoints %d, x %f, y %f", plotvars[j].npoints, plotvars[j].points_xs[0], plotvars[j].points_ys[0]);
+            //plstring(plotvars[j].npoints, plotvars[j].points_xs, plotvars[j].points_ys, "#(229)");
+            plcol0(9);
+            plsym(plotvars[j].npoints, plotvars[j].points_xs, plotvars[j].points_ys, 229);
             plend();
         }
 
