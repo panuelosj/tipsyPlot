@@ -149,8 +149,10 @@ typedef struct {
 */
 
 float calc_rho(void* particle, int type);
-float calc_velx(void* particle, int type);
 float calc_temp(void* particle, int type);
+float calc_pressure(void* particle, int type);
+float calc_velx(void* particle, int type);
+float calc_entropy(void* particle, int type);
 float xpos(tipsy* tipsyIn, int type, int p);
 
 // tipsySimEdit.c

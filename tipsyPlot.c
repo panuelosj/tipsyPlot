@@ -6,7 +6,8 @@
 #include "tipsyPlot.h"
 #include <plplot/plplot.h>
 
-float xpos(tipsy* tipsyIn, int type, int particle);
+#define GAMMA 1.4
+
 
 int main() {
     printf("Hello World\n");
@@ -52,11 +53,14 @@ int main() {
     /*
     DERIVED ARRAYS
     */
-    int numvars = 3;
+    int numvars = 6;
     derivedvar* plotvars = (derivedvar*)malloc(numvars*sizeof(derivedvar));
     initializeDerivedVar(&plotvars[0], "rho", "Density", "rho",  calc_rho, TYPE_GAS);
-    initializeDerivedVar(&plotvars[1], "v_x", "Flow Velocity", "velx", calc_velx, TYPE_GAS);
-    initializeDerivedVar(&plotvars[2], "T", "Temperature", "temp", calc_temp, TYPE_GAS);
+    initializeDerivedVar(&plotvars[1], "T", "Temperature", "temp", calc_temp, TYPE_GAS);
+    initializeDerivedVar(&plotvars[2], "P", "Pressure", "p", calc_pressure, TYPE_GAS);
+    initializeDerivedVar(&plotvars[3], "v_x", "Flow Velocity", "velx", calc_velx, TYPE_GAS);
+    initializeDerivedVar(&plotvars[4], "p/rho^gamma", "Entropy(ish)", "entropy", calc_entropy, TYPE_GAS);
+    initializeDerivedVar(&plotvars[5], "C", "Sound Speed", "cSound", calc_entropy, TYPE_GAS);
 
 
 
@@ -141,7 +145,7 @@ int main() {
             printf("\tplotting: %s\n", plotvars[j].title);
             calculateDerivedVarPoints(&plotvars[j], pfile, TYPE_GAS);
             sprintf(filenameout, "./test/%s/%s.scsShock.%05d.png", plotvars[j].shortname, plotvars[j].shortname, filetime);
-            
+
             sprintf(title, "%s t=%05d", plotvars[j].title, filetime);
             // setup plotting grid
                 // plenv(xmin, xmax, ymin, ymax, just, axis);
@@ -158,12 +162,10 @@ int main() {
             plinit();
             plenv(xmin, xmax, plotvars[j].ymin, plotvars[j].ymax, 0, 0);
             pllab("x", plotvars[j].label, title);
-            plline(plotvars[j].nbins, plotvars[j].profile_xs, plotvars[j].profile_ys);
-            //printf("npoints %d\n", plotvars[j].npoints);
-            //printf("npoints %d, x %f, y %f", plotvars[j].npoints, plotvars[j].points_xs[0], plotvars[j].points_ys[0]);
-            //plstring(plotvars[j].npoints, plotvars[j].points_xs, plotvars[j].points_ys, "#(229)");
             plcol0(9);
             plsym(plotvars[j].npoints, plotvars[j].points_xs, plotvars[j].points_ys, 229);
+            plcol0(1);
+            plline(plotvars[j].nbins, plotvars[j].profile_xs, plotvars[j].profile_ys);
             plend();
         }
 
@@ -178,13 +180,34 @@ int main() {
 
 // calc_var
 float calc_rho(void* particle, int type){
-    switch (type) {
-        case TYPE_GAS:
-            return ((gas_particle*)particle)->rho;
-            break;
-        default:
-            errorCase(ERR_INVALID_ATTRIBUTE);
-    }
+    if (type == TYPE_GAS)
+        return ((gas_particle*)particle)->rho;
+    else
+        errorCase(ERR_INVALID_ATTRIBUTE);
+}
+float calc_temp(void* particle, int type){
+    if (type == TYPE_GAS)
+        return ((gas_particle*)particle)->temp;
+    else
+        errorCase(ERR_INVALID_ATTRIBUTE);
+}
+float calc_pressure(void* particle, int type){
+    if (type == TYPE_GAS)
+        return (((gas_particle*)particle)->rho)*0.4*(((gas_particle*)particle)->temp);
+    else
+        errorCase(ERR_INVALID_ATTRIBUTE);
+}
+float calc_entropy(void* particle, int type){
+    if (type == TYPE_GAS)
+        return (0.4*((gas_particle*)particle)->temp/(pow(((gas_particle*)particle)->rho, GAMMA-1.0)));
+    else
+        errorCase(ERR_INVALID_ATTRIBUTE);
+}
+float calc_csound(void* particle, int type){
+    if (type == TYPE_GAS)
+        return pow(GAMMA*calc_pressure(particle, TYPE_GAS)/((gas_particle*)particle)->rho,0.5);
+    else
+        errorCase(ERR_INVALID_ATTRIBUTE);
 }
 float calc_velx(void* particle, int type){
     switch (type) {
@@ -199,15 +222,7 @@ float calc_velx(void* particle, int type){
             break;
     }
 }
-float calc_temp(void* particle, int type){
-    switch (type) {
-        case TYPE_GAS:
-            return ((gas_particle*)particle)->temp;
-            break;
-        default:
-            errorCase(ERR_INVALID_ATTRIBUTE);
-    }
-}
+
 
 // calc_bin
 float xpos(tipsy* tipsyIn, int type, int p){
