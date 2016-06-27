@@ -171,6 +171,7 @@ tipsy* tipsyJoin(tipsy* tipsy1, tipsy* tipsy2);
 
 // tipsyProfile.c
 profile* profileCreate(tipsy* tipsyIn, const int nbins, const float min, const float max, calc_bin xs);
+void profileDestroy(profile* profileIn);
 void initializeDerivedVar(derivedvar* variable, const char label[], const char title[], const char shortname[], calc_var equation, int type);
 void calculateDerivedVar(derivedvar* variable, profile* profileIn, int type);
 void calculateDerivedVarPoints(derivedvar* variable, profile* profileIn, int type);

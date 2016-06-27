@@ -250,9 +250,10 @@ profile* profileCreate(tipsy* tipsyIn, const int nbins, const float min, const f
     if (tipsyIn->head->nsph != 0){
         for (i=0; i < tipsyIn->head->nsph; i++){
             j = (int)floor((xs(tipsyIn, TYPE_GAS, i) - min)/(profileOut->binwidth));
-            if (j < 0) j = 0; if (j >= nbins) j = nbins-1;
-            pFlopGas(&(profileOut->bin[j].gas), &(profileOut->bin[j].gas), &(tipsyIn->gas[i]), flopAdd);
-            profileOut->bin[j].ngas ++;
+            if (j >= 0 && j < nbins) {
+                pFlopGas(&(profileOut->bin[j].gas), &(profileOut->bin[j].gas), &(tipsyIn->gas[i]), flopAdd);
+                profileOut->bin[j].ngas ++;
+            }
         }
         for (j=0; j < nbins; j++)
             vFlopGas(&(profileOut->bin[j].gas), &(profileOut->bin[j].gas), (float)profileOut->bin[j].ngas, flopDivide);
@@ -260,9 +261,10 @@ profile* profileCreate(tipsy* tipsyIn, const int nbins, const float min, const f
     if (tipsyIn->head->ndark != 0){
         for (i=0; i < tipsyIn->head->ndark; i++){
             j = (int)floor((xs(tipsyIn, TYPE_DARK, i) - min)/(profileOut->binwidth));
-            if (j < 0) j = 0; if (j >= nbins) j = nbins-1;
-            pFlopDark(&(profileOut->bin[j].dark), &(profileOut->bin[j].dark), &(tipsyIn->dark[i]), flopAdd);
-            profileOut->bin[j].ndark ++;
+            if (j >= 0 && j < nbins) {
+                pFlopDark(&(profileOut->bin[j].dark), &(profileOut->bin[j].dark), &(tipsyIn->dark[i]), flopAdd);
+                profileOut->bin[j].ndark ++;
+            }
         }
         for (j=0; j < nbins; j++)
             vFlopDark(&(profileOut->bin[j].dark), &(profileOut->bin[j].dark), (float)profileOut->bin[j].ndark, flopDivide);
@@ -270,9 +272,10 @@ profile* profileCreate(tipsy* tipsyIn, const int nbins, const float min, const f
     if (tipsyIn->head->nstar != 0){
         for (i=0; i < tipsyIn->head->nstar; i++){
             j = (int)floor((xs(tipsyIn, TYPE_STAR, i) - min)/(profileOut->binwidth));
-            if (j < 0) j = 0; if (j >= nbins) j = nbins-1;
-            pFlopStar(&(profileOut->bin[j].star), &(profileOut->bin[j].star), &(tipsyIn->star[i]), flopAdd);
-            profileOut->bin[j].nstar ++;
+            if (j >= 0 && j < nbins) {
+                pFlopStar(&(profileOut->bin[j].star), &(profileOut->bin[j].star), &(tipsyIn->star[i]), flopAdd);
+                profileOut->bin[j].nstar ++;
+            }
         }
         for (j=0; j < nbins; j++)
             vFlopStar(&(profileOut->bin[j].star), &(profileOut->bin[j].star), (float)profileOut->bin[j].nstar, flopDivide);

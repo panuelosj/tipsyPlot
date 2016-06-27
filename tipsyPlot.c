@@ -23,14 +23,15 @@ int main() {
     ##        ##     ## ##     ## ##     ## ##     ##  ######
     */
     // FileIO params
-    const char genericfilename[] = "sampledata/scsShock";
-    const char genericTitle[] = "Shocktube";
-    const int nsteps = 500, interval = 5;
+    const char genericfilename[] = "sampledata/rcrVel50";
+    const char genericTitle[] = "RCR V=50 nsmooth=200";
+    const int nsteps = 400, interval = 2;
     const int nout = (int)nsteps/interval;
 
-    const float xmin = -7.0, xmax = 7.0;
+    //const float xmin = -7.0, xmax = 7.0;
+    const float xmin = -3.0, xmax = 3.0;
     const int nbins = 200;
-    const float dDelta = 0.01;
+    const float dDelta = 0.0001;
 
     // Physical Properties
     //const float gamma = 1.4;
@@ -82,9 +83,9 @@ int main() {
     ##    ## ##     ## ##       ##     ##    ##     ##  ##     ## ##   ###
      ######   #######  ########  #######     ##    ####  #######  ##    ##
     */
-    double truerho[4] = {0.125, 3.485471e-1, 3.48571e-1, 0.125};
-    double truevelx[4] = {1.0, 0.0, 0.0, -1.0};
-    double truep[4] = {0.05, 2.448958e-1, 2.448958e-1, 0.05};
+    double truerho[4] = {0.125, 0, 0, 0.125};
+    double truevelx[4] = {-50.0, 0.0, 0.0, 50.0};
+    double truep[4] = {0.05, 0, 0, 0.05};
     double truetemp[4];
     double trueentropy[4];
     double truecsound[4];
@@ -113,7 +114,7 @@ int main() {
         arrentropy[2*i] = trueentropy[i];
         arrentropy[2*i+1] = trueentropy[i];
     }
-    double wavec[6] = {-5.591663e-1, -5.591663e-1, 0.0, 0.0, 5.591663e-1, 5.591663e-1};
+    double wavec[6] = {-5.074833e+1, -4.625834261e-3, 0.0, 0.0, 4.625834261e-3, 5.074833e+1};
     double analytic_xs[8] = {xmin, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, xmax};
     double** analytic_ys = (double**)malloc(numvars*sizeof(double));
     analytic_ys[0] = arrrho;
@@ -190,6 +191,9 @@ int main() {
     ##        ########  #######     ##
     */
     printf("found bounds, creating plots now\n");
+    // delete all pictures
+    printf("rm test/*/*.png test/*.gif -v\n");
+    system("rm test/*/*.png test/*.gif -v");
 
     for (i=0; i<nout; i++){
         filetime = (i+1)*interval;                                              // calculate current filename time
@@ -206,9 +210,9 @@ int main() {
         for (j=0; j<numvars; j++){
             printf("\tplotting: %s\n", plotvars[j].title);
             calculateDerivedVarPoints(&plotvars[j], pfile, TYPE_GAS);
-            sprintf(filenameout, "./test/%s/%s.scsShock.%05d.png", plotvars[j].shortname, plotvars[j].shortname, filetime);
+            sprintf(filenameout, "./test/%s/%s.rcsShock.%05d.png", plotvars[j].shortname, plotvars[j].shortname, filetime);
 
-            sprintf(title, "%s: %s t=%05d", genericTitle, plotvars[j].title, filetime);
+            sprintf(title, "%s: %s t=%.4f", genericTitle, plotvars[j].title, (float)filetime*dDelta);
             // setup plotting grid
                 // plenv(xmin, xmax, ymin, ymax, just, axis);
                 // just (axis scaling) - 0 = scaled independently
@@ -218,21 +222,26 @@ int main() {
             plsdev("pngcairo");
             plfontld(1);
             plsetopt("geometry", "810x670");
+            plsetopt("dpi", "810x670");
             plscolbg(255, 255, 255);
             plscol0(1, 0, 0, 0);
             plsfnam(filenameout);
             plinit();
             plenv(xmin, xmax, plotvars[j].ymin, plotvars[j].ymax, 0, 0);
             pllab("x", plotvars[j].label, title);
-            plcol0(9);
-            //plsym(plotvars[j].npoints, plotvars[j].points_xs, plotvars[j].points_ys, 229);
-            plpoin(plotvars[j].npoints, plotvars[j].points_xs, plotvars[j].points_ys, -1);
-            plcol0(1);
+            plcol0(9);      // blue
+            //plpoin(plotvars[j].npoints, plotvars[j].points_xs, plotvars[j].points_ys, -1);
+            plpoin(28672, plotvars[j].points_xs, plotvars[j].points_ys, -1);
+            plcol0(13);     // magenta
+            plpoin(28672, &plotvars[j].points_xs[28671], &plotvars[j].points_ys[28671], -1);
+            plcol0(1);      // black
             plline(plotvars[j].nbins, plotvars[j].profile_xs, plotvars[j].profile_ys);
-            plcol0(3);
+            plcol0(3);      // green
             plline(8, analytic_xs, analytic_ys[j]);
             plend();
         }
+        tipsyDestroy(snap);
+        profileDestroy(pfile);
 
 
     }
@@ -240,7 +249,7 @@ int main() {
     // make gifs
     float delay = (float)300/(float)nout;
     for (i=0; i<numvars; i++){
-        sprintf(command, "convert -layers optimize-transparency -delay %f ./test/%s/%s.*.png ./test/%s.animation.gif", delay, plotvars[i].shortname, plotvars[i].shortname, plotvars[i].shortname);
+        sprintf(command, "convert -layers optimize -delay %f ./test/%s/%s.*.png ./test/%s.animation.gif", delay, plotvars[i].shortname, plotvars[i].shortname, plotvars[i].shortname);
         printf("%s\n", command);
         system(command);
     }
