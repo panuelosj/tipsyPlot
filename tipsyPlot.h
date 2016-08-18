@@ -102,6 +102,7 @@ typedef float (*flop)(float val1, float val2);
 typedef float (*calc_bin)(tipsy* tipsyIn, int type, int p);
 //typedef float (*calc_var)(bin_particle* binp);
 typedef float (*calc_var)(void* particle, int type);
+typedef int (*crop)(void* particle, int type);
 
 typedef struct {
     float xmin;
@@ -147,16 +148,21 @@ typedef struct {
 ##       ##     ## ##   ### ##    ##    ##     ##  ##     ## ##   ### ##    ##
 ##        #######  ##    ##  ######     ##    ####  #######  ##    ##  ######
 */
+int cropThinSliceZ(void* particle, int type);
+
+void hackyTipsySplit(tipsy* tipsyIn, tipsy* tipsyLeft, tipsy* tipsyRight);
 
 float calc_rho(void* particle, int type);
 float calc_temp(void* particle, int type);
 float calc_pressure(void* particle, int type);
 float calc_velx(void* particle, int type);
 float calc_entropy(void* particle, int type);
+float calc_y(void* particle, int type);
 float xpos(tipsy* tipsyIn, int type, int p);
 
 // tipsySimEdit.c
 void tipsyCenter(tipsy* tipsyIn);
+void tipsyCrop(tipsy* tipsyIn, crop op);
 void tipsyScaleShrink(tipsy* tipsyIn, const int xShrink, const int yShrink, const int zShrink);
 void tipsyScaleExpand(tipsy* tipsyIn, const float xExpand, const float yExpand, const float zExpand);
 void tipsyTesselate(tipsy* tipsyIn, const int xTile, const int yTile, const int zTile);
@@ -170,6 +176,7 @@ void tipsyExtend(tipsy* tipsyIn, const int nNewSPH, const int nNewDark, const in
 tipsy* tipsyJoin(tipsy* tipsy1, tipsy* tipsy2);
 
 // tipsyProfile.c
+profile* profileCreateParticleSpacing(tipsy* tipsyIn, const int nbinssample, const float xmin, const float xmax, calc_bin xs);
 profile* profileCreate(tipsy* tipsyIn, const int nbins, const float min, const float max, calc_bin xs);
 void profileDestroy(profile* profileIn);
 void initializeDerivedVar(derivedvar* variable, const char label[], const char title[], const char shortname[], calc_var equation, int type);
@@ -179,15 +186,20 @@ void calculateDerivedVarPoints(derivedvar* variable, profile* profileIn, int typ
 
 // tipsyFileIO.c
 tipsy* readTipsyStd(const char filename[]);
+float* readTipsyDumpScalar(const char filename[]);
+float* readTipsyDumpVector(const char filename[], int axis);
+float* readTipsyDumpVectorMagnitude(const char filename[]);
 int writeTipsyStd(const char filename[], tipsy* tipsyOut);
+
+// gadgetFileIO.c
+tipsy* readGadgetToTipsy(const char filename[]);
+int writeGadgetFromTipsy(const char filename[], tipsy* tipsyOut);
 
 // tipsyUtils.c
 void autoFindBounds(tipsy* tipsyIn);
 void tipsySetDefaults(tipsy* tipsyIn);
 
 // particleFlops.c
-//void particleSetZero(void* particle, int type);
-//void particleAdd(void* dest, void* src1, void* src2, int type);
 void pFlop(void* dest, void* src1, void* src2, int type, flop op);
 void pFlopGas(gas_particle* dest, gas_particle* src1, gas_particle* src2, flop op);
 void pFlopDark(dark_particle* dest, dark_particle* src1, dark_particle* src2, flop op);
@@ -197,6 +209,7 @@ void vFlopGas(gas_particle* dest, gas_particle* src1, float src2, flop op);
 void vFlopDark(dark_particle* dest, dark_particle* src1, float src2, flop op);
 void vFlopStar(star_particle* dest, star_particle* src1, float src2, flop op);
 
+float flopCopy(float val1, float val2);
 float flopSetZero(float val1, float val2);
 float flopAdd(float val1, float val2);
 float flopDivide(float val1, float val2);

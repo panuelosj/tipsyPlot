@@ -28,8 +28,8 @@ int main(int argc, char* argv[]) {
     const char* genericfileout = NULL;
     const char* genericTitle = NULL;
     int nsteps, interval, nbins;
-    double dxmin, dxmax, dymin, dymax, dmaxtemp, ddDelta;
-    float xmin, xmax, ymin, ymax, maxtemp, dDelta;
+    double dxmin, dxmax, dymin, dymax, dmaxtemp, ddDelta, doffset;
+    float xmin, xmax, ymin, ymax, maxtemp, dDelta, offset;
 
     config_t cfg;
     config_init(&cfg);
@@ -137,6 +137,8 @@ int main(int argc, char* argv[]) {
     configarraybuff = config_lookup(&cfg, "wavespeed");
     for (i=0; i<6; i++)
         wavec[i] = config_setting_get_float_elem(configarraybuff, i);
+    config_lookup_float(&cfg, "offset", &doffset);
+    offset = (float)doffset;
 
     //double truerho[4] = {0.125, 3.485471e-1, 3.485471e-1, 0.125};
     //double truevelx[4] = {1.0, 0.0, 0.0, -1.0};
@@ -194,9 +196,9 @@ int main(int argc, char* argv[]) {
     // Find min-max bounds
     // first timestep, sets the min max bounds
     filetime = (0+1)*interval;                                                  // calculate current filename time
-    sprintf(simname, "%s.%05d", genericfilename, filetime);                     // generate filename
+    sprintf(simname, "%s_%03d", genericfilename, filetime);                     // generate filename
     printf("reading: %s\n", simname);
-    tipsy* snap = readTipsyStd(simname);
+    tipsy* snap = readGadgetToTipsy(simname);
     profile* pfile = profileCreate(snap, nbins, xmin, xmax, xpos);
     //profile* pfile2;
     for (j=0; j<numvars; j++){
@@ -209,9 +211,9 @@ int main(int argc, char* argv[]) {
     // the rest, updates the min max bounds by checking if they are lower and higher
     for (i=1; i<nout; i++){
         filetime = (i+1)*interval;                                              // calculate current filename time
-        sprintf(simname, "%s.%05d", genericfilename, filetime);                 // generate filename
+        sprintf(simname, "%s_%03d", genericfilename, filetime);                 // generate filename
         printf("reading: %s\n", simname);
-        snap = readTipsyStd(simname);
+        snap = readGadgetToTipsy(simname);
         pfile = profileCreate(snap, nbins, xmin, xmax, xpos);
         for (j=0; j<numvars; j++){
             printf("\tcalculating: %s\n", plotvars[j].title);
@@ -253,14 +255,14 @@ int main(int argc, char* argv[]) {
 
     for (i=0; i<nout; i++){
         filetime = (i+1)*interval;                                              // calculate current filename time
-        sprintf(simname, "%s.%05d", genericfilename, filetime);                 // generate filename
+        sprintf(simname, "%s_%03d", genericfilename, filetime);                 // generate filename
         printf("reading: %s\n", simname);
-        snap = readTipsyStd(simname);
+        snap = readGadgetToTipsy(simname);
         pfile = profileCreateParticleSpacing(snap, nbins, xmin, xmax, xpos);
         //pfile2 = profileCreateParticleSpacing(snap, nbins, xmin, xmax, xpos);
 
         for (j=0; j<6; j++){
-            analytic_xs[j+1] = wavec[j]*((float)filetime)*((float)dDelta);
+            analytic_xs[j+1] = wavec[j]*((float)filetime)*((float)dDelta) + offset;
         }
 
         // Individual plots
@@ -301,8 +303,8 @@ int main(int argc, char* argv[]) {
             plline(8, analytic_xs, analytic_ys[j]);
             plend();
         }
+        profileDestroy(pfile);                                                  // profile MUST be destroyed first before tipsy since profile contains a link to tipsy that cannot be deallocated once tipsy is gone (makes a segfault)
         tipsyDestroy(snap);
-        profileDestroy(pfile);
 
     }
 

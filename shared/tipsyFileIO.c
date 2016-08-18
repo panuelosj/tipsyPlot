@@ -93,6 +93,84 @@ tipsy* readTipsyStd(const char filename[]){
 }
 
 /*
+   ###     ######   ######  #### ####    ########  ##     ## ##     ## ########   ######
+  ## ##   ##    ## ##    ##  ##   ##     ##     ## ##     ## ###   ### ##     ## ##    ##
+ ##   ##  ##       ##        ##   ##     ##     ## ##     ## #### #### ##     ## ##
+##     ##  ######  ##        ##   ##     ##     ## ##     ## ## ### ## ########   ######
+#########       ## ##        ##   ##     ##     ## ##     ## ##     ## ##              ##
+##     ## ##    ## ##    ##  ##   ##     ##     ## ##     ## ##     ## ##        ##    ##
+##     ##  ######   ######  #### ####    ########   #######  ##     ## ##         ######
+*/
+float* readTipsyDumpScalar(const char filename[]){
+    FILE *fp = fopen(filename, "r");
+    if (fp == NULL)
+        errorCase(ERR_FILE_OPEN);
+
+    // the first line is always nbodies, which dictates the length of the file
+    int nbodies, i;
+    fscanf(fp, "%d", &nbodies);
+    // allocate array based on nbodies
+    float* dataOut = (float*)malloc(nbodies*sizeof(float));
+
+    for(i=0; i<nbodies; i++)
+        fscanf(fp, "%f", &dataOut[i]);
+
+    fclose(fp);
+    return dataOut;
+}
+
+float* readTipsyDumpVector(const char filename[], int axis){
+    FILE *fp = fopen(filename, "r");
+    if (fp == NULL)
+        errorCase(ERR_FILE_OPEN);
+
+    // the first line is always nbodies, which dictates the length of the file
+    int nbodies, i;
+    fscanf(fp, "%d", &nbodies);
+    // allocate array based on nbodies
+    float* dataOut = (float*)malloc(nbodies*sizeof(float));
+
+    if (axis == AXIS_Y){
+        fscanf(fp, "%*f");
+    }
+    else if (axis == AXIS_Z){
+        fscanf(fp, "%*f"); fscanf(fp, "%*f");
+    }
+
+    for(i=0; i<nbodies; i++){
+        fscanf(fp, "%f", &dataOut[i]);
+        fscanf(fp, "%*f"); fscanf(fp, "%*f");
+    }
+
+    fclose(fp);
+    return dataOut;
+}
+
+float* readTipsyDumpVectorMagnitude(const char filename[]){
+    FILE *fp = fopen(filename, "r");
+    if (fp == NULL)
+        errorCase(ERR_FILE_OPEN);
+
+    // the first line is always nbodies, which dictates the length of the file
+    int nbodies, i;
+    fscanf(fp, "%d", &nbodies);
+    // allocate array based on nbodies
+    float* dataOut = (float*)malloc(nbodies*sizeof(float));
+
+    float x,y,z;                                                                // holders for the three components
+
+    for(i=0; i<nbodies; i++){
+        fscanf(fp, "%f", &x);
+        fscanf(fp, "%f", &y);
+        fscanf(fp, "%f", &z);
+        dataOut[i] = (float)sqrt(x*x+y*y+z*z);
+    }
+
+    fclose(fp);
+    return dataOut;
+}
+
+/*
 ##      ## ########  #### ######## ########
 ##  ##  ## ##     ##  ##     ##    ##
 ##  ##  ## ##     ##  ##     ##    ##

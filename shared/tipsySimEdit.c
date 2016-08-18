@@ -30,6 +30,57 @@ void tipsyCenter(tipsy* tipsyIn){
 }
 
 /*
+ ######  ########   #######  ########
+##    ## ##     ## ##     ## ##     ##
+##       ##     ## ##     ## ##     ##
+##       ########  ##     ## ########
+##       ##   ##   ##     ## ##
+##    ## ##    ##  ##     ## ##
+ ######  ##     ##  #######  ##
+*/
+void tipsyCrop(tipsy* tipsyIn, crop op){
+    /* Crops the simulation to any parameter according to crop op. The function
+        uses crop op which returns a binary value telling it to keep or throw
+        out the current particle. If crop op returns nonzero, the current
+        particle is copied to the last position recorded by nkept_, which should
+        either be an unkept particle, or the current particle (only if all
+        previous particles have been kept). Once all the kept particles have
+        been copied to the beginning of the tipsy struct, the struct is resized
+        to include only those particles, effectively deleting the end of the
+        struct containing irrelevant particles (only has unkept particles and
+        kept particles copied to the beginning of the struct).
+
+        Parameters:
+            tipsy* tipsyIn      - pointer to the tipsy struct to crop
+            crop op             - operation returning binary value to determine
+                                    if a particle is to be kept or not
+    */
+
+    int i;
+    int nkeptgas = 0, nkeptdark = 0, nkeptstar = 0;
+
+    for (i=0; i<tipsyIn->attr->nloadedsph; i++){
+        if (op(&tipsyIn->gas[i], TYPE_GAS) != 0) {
+            pFlopGas(&tipsyIn->gas[nkeptgas], &tipsyIn->gas[i], NULL, flopCopy);
+            nkeptgas++;
+        }
+    }
+    for (i=0; i<tipsyIn->attr->nloadeddark; i++){
+        if (op(&tipsyIn->dark[i], TYPE_DARK) != 0){
+            pFlopDark(&tipsyIn->dark[nkeptdark], &tipsyIn->dark[i], NULL, flopCopy);
+            nkeptdark++;
+        }
+    }
+    for (i=0; i<tipsyIn->attr->nloadedstar; i++){
+        if (op(&tipsyIn->star[i], TYPE_STAR) != 0){
+            pFlopStar(&tipsyIn->star[nkeptstar], &tipsyIn->star[i], NULL, flopCopy);
+        }
+    }
+    tipsyExtend(tipsyIn, nkeptgas, nkeptdark, nkeptstar);
+}
+
+
+/*
  ######   ######     ###    ##       ########
 ##    ## ##    ##   ## ##   ##       ##
 ##       ##        ##   ##  ##       ##

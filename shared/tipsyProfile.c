@@ -192,7 +192,85 @@ void calculateDerivedVarPoints(derivedvar* variable, profile* profileIn, int typ
 ##        ##    ##  ##     ## ##        ##  ##       ##
 ##        ##     ##  #######  ##       #### ######## ########
 */
-profile* profileCreate(tipsy* tipsyIn, const int nbins, const float min, const float max, calc_bin xs){
+profile* profileCreateParticleSpacing(tipsy* tipsyIn, const int nbinssample, const float xmin, const float xmax, calc_bin xs){
+    // indexing vars
+    int i;
+    int ibins = 0;            // current bin index
+    int nbinsdynamic = nbinssample;
+    float xcurrent = xmin;
+    float averagemass, averagerho;
+    int nparticles;
+    float particlespacing;
+    float binwidthsample = (xmax - xmin)/((float)nbinssample);
+
+    // Create object (pointer to a struct)
+    profile* profileOut = (profile*)malloc(sizeof(profile));
+    profileOut->sim = tipsyIn;
+    //profileOut->nbins = nbins;
+    profileOut->eqbin = xs;
+    profileOut->binwidth = 0.0;                                                 // set this as zero for now to mean dynamic widths
+
+    // Allocate buffer for bins and particles
+    profileOut->bin = (bin_particle*)malloc(nbinssample*sizeof(bin_particle));
+
+    ibins = 0;
+    if (tipsyIn->head->nsph != 0){
+        for (ibins = 0; xcurrent < xmax; ibins++){
+            // check if the allocated space is full, and realloc if needed
+            if (ibins >= nbinsdynamic){
+                nbinsdynamic += nbinssample;
+                profileOut->bin = (bin_particle*)realloc(profileOut->bin, nbinsdynamic*sizeof(bin_particle));
+            }
+
+            // initalize the current bin
+            profileOut->bin[ibins].xmin = xcurrent;                             // set the bin's min to the current x
+            profileOut->bin[ibins].ngas = 0;
+            profileOut->bin[ibins].ndark = 0;
+            profileOut->bin[ibins].nstar = 0;
+            pFlopGas(&(profileOut->bin[ibins].gas), NULL, NULL, flopSetZero);   // zero out the bin particles
+            pFlopDark(&(profileOut->bin[ibins].dark), NULL, NULL, flopSetZero);
+            pFlopStar(&(profileOut->bin[ibins].star), NULL, NULL, flopSetZero);
+
+            // find particle spacing by running through all particles and taking
+                // the average of all particles in the slice ahead of xcurrent
+                // with width determined by binwidthsample;
+            averagemass = 0.0; averagerho = 0.0; nparticles = 0;
+            for (i=0; i < tipsyIn->head->nsph; i++){
+                if (xs(tipsyIn, TYPE_GAS, i) > xcurrent && xs(tipsyIn, TYPE_GAS, i) < (xcurrent + binwidthsample)){
+                    averagemass += tipsyIn->gas[i].mass;
+                    averagerho += tipsyIn->gas[i].rho;
+                    nparticles++;
+                }
+            }
+            averagemass /= (float)nparticles;
+            averagerho /= (float)nparticles;
+            if (nparticles != 0 && averagerho > 0.0)
+                particlespacing = pow(averagemass/averagerho, 1.0/3.0);
+            else
+                particlespacing = binwidthsample;
+
+            // run through all particles, finding which ones lie within the bin
+                // and take average of properties of particles within the bin
+            for (i=0; i < tipsyIn->head->nsph; i++){
+                if (xs(tipsyIn, TYPE_GAS, i) > xcurrent && xs(tipsyIn, TYPE_GAS, i) < (xcurrent + particlespacing)){
+                    pFlopGas(&(profileOut->bin[ibins].gas), &(profileOut->bin[ibins].gas), &(tipsyIn->gas[i]), flopAdd);
+                    profileOut->bin[ibins].ngas ++;
+                }
+            }
+            vFlopGas(&(profileOut->bin[ibins].gas), &(profileOut->bin[ibins].gas), (float)profileOut->bin[ibins].ngas, flopDivide);
+
+            // update bin location and width
+            xcurrent += particlespacing;
+            profileOut->bin[ibins].xmax = xcurrent;
+            profileOut->bin[ibins].xval = xcurrent - (0.5*particlespacing);
+        }
+        profileOut->nbins = (ibins);
+        profileOut->bin = (bin_particle*)realloc(profileOut->bin, (ibins)*sizeof(bin_particle));
+    }
+    return profileOut;
+}
+
+profile* profileCreate(tipsy* tipsyIn, const int nbins, const float xmin, const float xmax, calc_bin xs){
     /* Creates a new profile based on an input tipsy. Allocating all relevant
         memory based on the number of bins stated, as well as calculates the
         binned averages for all default variables. Structure for the profile is
@@ -209,8 +287,8 @@ profile* profileCreate(tipsy* tipsyIn, const int nbins, const float min, const f
         Parameters:
             const tipsy* tipsyIn    - tipsy snapshot to make a profile of
             const int nbins         - number of bins to subdivide the profile into
-            const float min         - minimum value for the lower bin extreme
-            const float max         - maximum value for the uppen bin extreme
+            const float xmin        - minimum value for the lower bin extreme
+            const float xmax        - maximum value for the uppen bin extreme
             float (*calc_x(tipsy*)) - a pointer to a function that accepts the
                                         tipsy snapshot and returns the value to
                                         be binned
@@ -227,14 +305,14 @@ profile* profileCreate(tipsy* tipsyIn, const int nbins, const float min, const f
     profileOut->sim = tipsyIn;
     profileOut->nbins = nbins;
     profileOut->eqbin = xs;
-    profileOut->binwidth = (max - min)/((float)nbins);
+    profileOut->binwidth = (xmax - xmin)/((float)nbins);
 
     // Allocate and initialize bins and particles
     profileOut->bin = (bin_particle*)malloc(nbins*sizeof(bin_particle));
     for (i=0; i<nbins; i++){
-        profileOut->bin[i].xmin = min + ((float)i)*profileOut->binwidth;
-        profileOut->bin[i].xmax = min + (((float)i)+1.0)*profileOut->binwidth;
-        profileOut->bin[i].xval = min + (((float)i)+0.5)*profileOut->binwidth;
+        profileOut->bin[i].xmin = xmin + ((float)i)*profileOut->binwidth;
+        profileOut->bin[i].xmax = xmin + (((float)i)+1.0)*profileOut->binwidth;
+        profileOut->bin[i].xval = xmin + (((float)i)+0.5)*profileOut->binwidth;
         profileOut->bin[i].ngas = 0;
         profileOut->bin[i].ndark = 0;
         profileOut->bin[i].nstar = 0;
@@ -249,7 +327,7 @@ profile* profileCreate(tipsy* tipsyIn, const int nbins, const float min, const f
         // total number of particles found for that bin
     if (tipsyIn->head->nsph != 0){
         for (i=0; i < tipsyIn->head->nsph; i++){
-            j = (int)floor((xs(tipsyIn, TYPE_GAS, i) - min)/(profileOut->binwidth));
+            j = (int)floor((xs(tipsyIn, TYPE_GAS, i) - xmin)/(profileOut->binwidth));
             if (j >= 0 && j < nbins) {
                 pFlopGas(&(profileOut->bin[j].gas), &(profileOut->bin[j].gas), &(tipsyIn->gas[i]), flopAdd);
                 profileOut->bin[j].ngas ++;
@@ -260,7 +338,7 @@ profile* profileCreate(tipsy* tipsyIn, const int nbins, const float min, const f
     }
     if (tipsyIn->head->ndark != 0){
         for (i=0; i < tipsyIn->head->ndark; i++){
-            j = (int)floor((xs(tipsyIn, TYPE_DARK, i) - min)/(profileOut->binwidth));
+            j = (int)floor((xs(tipsyIn, TYPE_DARK, i) - xmin)/(profileOut->binwidth));
             if (j >= 0 && j < nbins) {
                 pFlopDark(&(profileOut->bin[j].dark), &(profileOut->bin[j].dark), &(tipsyIn->dark[i]), flopAdd);
                 profileOut->bin[j].ndark ++;
@@ -271,7 +349,7 @@ profile* profileCreate(tipsy* tipsyIn, const int nbins, const float min, const f
     }
     if (tipsyIn->head->nstar != 0){
         for (i=0; i < tipsyIn->head->nstar; i++){
-            j = (int)floor((xs(tipsyIn, TYPE_STAR, i) - min)/(profileOut->binwidth));
+            j = (int)floor((xs(tipsyIn, TYPE_STAR, i) - xmin)/(profileOut->binwidth));
             if (j >= 0 && j < nbins) {
                 pFlopStar(&(profileOut->bin[j].star), &(profileOut->bin[j].star), &(tipsyIn->star[i]), flopAdd);
                 profileOut->bin[j].nstar ++;

@@ -14,6 +14,9 @@ float flopAdd(float val1, float val2){
 float flopDivide(float val1, float val2){
     return val1/val2;
 }
+float flopCopy(float val1, float val2){
+    return val1;
+}
 
 /*
 ##     ##    ######## ##        #######  ########   ######
